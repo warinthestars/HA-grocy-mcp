@@ -12,6 +12,20 @@ Python MCP server and CLI for [Grocy](https://grocy.info/).
 - an MCP server for tools like Claude Desktop, Claude Code, and other MCP clients
 - a `grocy` CLI for direct command-line use
 
+> This repository is a fork of [moustafattia/grocy-mcp](https://github.com/moustafattia/grocy-mcp) that adds a Home Assistant app (add-on) with a bearer-token protected HTTP endpoint.
+
+## Home Assistant app
+
+Run the MCP server as a Home Assistant app next to the Grocy app:
+
+1. **Settings → Apps → App store → ⋮ → Repositories**, add `https://github.com/warinthestars/HA-grocy-mcp`.
+2. Install **Grocy MCP Server**, then on its **Configuration** tab set `grocy_api_key` (Grocy → Settings → Manage API keys) and an `mcp_auth_token`. `grocy_url` defaults to the Community Grocy app's internal address, `http://a0d7b954-grocy:80`.
+3. Start it and point MCP clients at `http://<home-assistant-ip>:8100/mcp` with the header `Authorization: Bearer <mcp_auth_token>`.
+
+Full setup, including Claude Desktop, Claude custom connectors (via Cloudflared) and Home Assistant Assist, is in [`grocy_mcp_app/DOCS.md`](grocy_mcp_app/DOCS.md).
+
+Releases: add entries under `## [Unreleased]` in `CHANGELOG.md`, run `python scripts/release.py bump patch|minor|major`, merge, then push the `vX.Y.Z` tag. The **Home Assistant App** workflow builds `ghcr.io/warinthestars/grocy-mcp-addon:<version>` (amd64 + aarch64), which is what Home Assistant installs.
+
 ## Choose your path
 
 - Want to connect Grocy to Claude, ChatGPT, or another MCP client? Install `grocy-mcp`, run the MCP server, and point your client at it.

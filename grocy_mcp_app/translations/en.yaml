@@ -1,0 +1,15 @@
+configuration:
+  grocy_url:
+    name: Grocy URL
+    description: How this app reaches Grocy, no trailing slash. Grocy app on this Home Assistant -> internal hostname and container port, e.g. http://a0d7b954-grocy:80. Elsewhere -> e.g. http://192.168.1.50:9283. Not localhost, grocy.local or an Ingress URL.
+  grocy_api_key:
+    name: Grocy API key
+    description: Create one in Grocy under Settings (wrench icon) > Manage API keys > Add.
+  mcp_auth_token:
+    name: MCP bearer token
+    description: Strongly recommended. Clients must send the header "Authorization Bearer <token>". Use letters and digits only (32+ characters).
+  log_level:
+    name: Log level
+    description: Web server log verbosity.
+network:
+  8100/tcp: MCP streamable HTTP endpoint (/mcp)

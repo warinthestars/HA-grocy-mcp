@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-14
+
 ### Added
 
+- **Home Assistant app**: `grocy_mcp_app/` packages the server as a Home Assistant app (add-on) that serves MCP over streamable HTTP on port 8100 (`/mcp`), configured from the app's Configuration tab (`grocy_url`, `grocy_api_key`, `mcp_auth_token`, `log_level`). Defaults to the Community Grocy app's internal address and checks the Grocy connection at startup
+- **Bearer-token auth for the app's HTTP endpoint** (`grocy_mcp.mcp.http_transport`): with `mcp_auth_token` set, every request must send `Authorization: Bearer <token>`; OAuth discovery probes (`/.well-known/...`) are left unauthenticated so static-header clients such as Claude custom connectors work. Host/Origin pinning is off, so Home Assistant hostnames, LAN IPs and tunnels all work
+- **Release tooling**: `scripts/release.py` keeps `CHANGELOG.md`, the app's `config.yaml`, `__version__` and `pyproject.toml` in sync; the `Home Assistant App` workflow publishes `ghcr.io/warinthestars/grocy-mcp-addon` (amd64 + aarch64) from `vX.Y.Z` tags
 - **Testbed layer**: in-repo `testbed/` package for deterministic and provider-backed end-to-end Grocy workflow validation
 - **Demo environment tooling**: disposable Grocy Compose stack, seed profile, reset/bootstrap scripts, and local auth shim for CLI/MCP validation
 - **Scenario assets**: frozen receipt, pantry, and recipe fixtures with golden normalized JSON, confirmation files, and expected outcome assertions
@@ -88,3 +93,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Async HTTP client with retry logic for transient errors
 - Configuration from CLI args, environment variables, or TOML file
 - stdio and streamable-http MCP transports
+
+[0.3.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.3.0
