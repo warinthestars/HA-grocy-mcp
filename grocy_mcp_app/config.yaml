@@ -1,5 +1,5 @@
 name: Grocy MCP Server
-version: "0.3.0"
+version: "0.4.0"
 slug: grocy_mcp
 description: Model Context Protocol server exposing your Grocy stock, shopping lists, recipes, chores and tasks to AI assistants.
 url: https://github.com/warinthestars/HA-grocy-mcp
@@ -10,6 +10,12 @@ image: ghcr.io/warinthestars/grocy-mcp-addon
 init: false
 startup: application
 boot: auto
+# FORK: web UI through Home Assistant ingress ("Open Web UI" and the sidebar panel).
+# Ingress proxies to the same port; the UI only answers the Supervisor (172.30.32.2).
+ingress: true
+ingress_port: 8100
+panel_icon: mdi:fridge-outline
+panel_title: Grocy MCP
 ports:
   8100/tcp: 8100
 ports_description:

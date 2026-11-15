@@ -132,6 +132,26 @@ Grocy data, so treat it like a password.
    curl -i -X POST http://<home-assistant-ip>:8100/mcp
    ```
 
+4. Click **Open Web UI** (or **Grocy MCP** in the sidebar). The **Overview**
+   tab shows whether the server can reach Grocy, which Grocy user the API key
+   belongs to, which Grocy features are on, and any warnings such as a missing
+   bearer token.
+
+If the Overview shows Grocy as not connected, see [Troubleshooting](#7-troubleshooting).
+
+### The web UI
+
+| Tab | What it does |
+| --- | --- |
+| Overview | Grocy connection and version, API key user, enabled Grocy features, server version, uptime, auth status, warnings |
+| Connect | Copy-ready setup for Claude Code, Claude Desktop and custom connectors. Edit the address at the top to match how your client reaches Home Assistant |
+| Tools | Turn individual tools or whole groups on or off. Turned-off tools are hidden from AI clients (they see the change after refreshing their tool list). Saved across restarts and updates. Groups whose Grocy feature is off are marked, and one click turns those tools off |
+| Library | Counts of products, locations, product groups, quantity units, barcodes, shopping lists and items, recipes, meal plan entries, chores, open tasks, batteries and equipment |
+| Attention | Expired, past best-before and soon-due stock (pick how many days ahead), products below their minimum stock amount, and overdue chores, tasks and batteries |
+
+The web UI is only reachable through Home Assistant, which handles the login.
+It is not exposed on port 8100 to the rest of your network.
+
 ## 5. Connect an AI client
 
 Pick the option that matches where the client runs:
@@ -242,7 +262,8 @@ dialog shows the changelog. Check the **Log** tab after updating.
 | Log: `ERROR: missing configuration` | Fill in `grocy_url` and `grocy_api_key`, save, restart. |
 | Log: `Grocy not reachable`, or tool calls fail with *connection refused*, *name resolution* or timeouts | `grocy_url` isn't reachable from the container. Don't use `localhost`, `grocy.local` or an Ingress URL. Use the internal hostname + container port (section 3A), e.g. `http://a0d7b954-grocy:80`. |
 | Log: `rejected the API key`, or tool calls fail with **401** from Grocy | `grocy_api_key` is wrong or was deleted in Grocy. Create a new one. |
-| Recipe, meal plan, battery or other tools return errors | That feature may be turned off in Grocy (for the Community app: Grocy app **Configuration → features**). |
+| Recipe, meal plan, battery or other tools return errors | That feature may be turned off in Grocy (for the Community app: Grocy app **Configuration → features**). The web UI's **Tools** tab marks those groups and can turn their tools off. |
+| **Open Web UI** shows a 403 error | The UI only answers requests that come through Home Assistant. Open it from the app page or sidebar, not from `http://<ip>:8100/`. |
 | Client gets **401 Unauthorized** from this app | The client isn't sending `Authorization: Bearer <mcp_auth_token>`, or the token was mangled. Use letters/digits only; on Windows use the `env` form in 5.1. |
 | Log shows `GET /.well-known/oauth-protected-resource ... 404` | Normal. Clients check for OAuth first, then use the bearer header. |
 | Claude custom connector: "couldn't connect" / asks to sign in | The URL must be public HTTPS (5.2), Authentication must be *No sign in*, and the header must be set. A LAN URL can't work. |

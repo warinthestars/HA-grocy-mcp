@@ -10,6 +10,7 @@ Environment variables:
     MCP_AUTH_TOKEN  Optional bearer token. When set, every request must send
                     ``Authorization: Bearer <token>``.
     MCP_LOG_LEVEL   Uvicorn log level (default: info)
+    MCP_UI_ENABLED  Set to 0 to turn the web UI off (see web_ui.py)
 """
 
 from __future__ import annotations
@@ -36,8 +37,15 @@ class BearerAuthMiddleware:
         # they get a plain 404. Answering them with 401 makes clients such as
         # Claude's custom connectors assume OAuth is required instead of using the
         # static bearer header they were configured with.
+        # FORK: the web UI (/ and /ui/...) is guarded separately in web_ui.py
+        # (Home Assistant ingress or loopback only), so it skips the bearer check.
         path = scope.get("path", "")
-        if scope["type"] != "http" or path.startswith("/.well-known/"):
+        if (
+            scope["type"] != "http"
+            or path.startswith("/.well-known/")
+            or path == "/"
+            or path.startswith("/ui/")
+        ):
             await self.app(scope, receive, send)
             return
 
@@ -86,6 +94,14 @@ def run_http(
     path = path or os.getenv("MCP_PATH", "/mcp")
     token = os.getenv("MCP_AUTH_TOKEN", "").strip()
     log_level = os.getenv("MCP_LOG_LEVEL", "info").lower()
+
+    # FORK: web UI (Home Assistant "Open Web UI")
+    try:
+        from grocy_mcp.mcp.web_ui import register_ui
+
+        register_ui(mcp)
+    except Exception as e:  # the MCP endpoint must still start if the UI fails
+        print(f"Web UI not available: {e}", flush=True)
 
     app = build_http_app(mcp, path=path, token=token)
     print(

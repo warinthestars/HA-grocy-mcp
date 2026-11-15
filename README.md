@@ -21,6 +21,7 @@ Run the MCP server as a Home Assistant app next to the Grocy app:
 1. **Settings → Apps → App store → ⋮ → Repositories**, add `https://github.com/warinthestars/HA-grocy-mcp`.
 2. Install **Grocy MCP Server**, then on its **Configuration** tab set `grocy_api_key` (Grocy → Settings → Manage API keys) and an `mcp_auth_token`. `grocy_url` defaults to the Community Grocy app's internal address, `http://a0d7b954-grocy:80`.
 3. Start it and point MCP clients at `http://<home-assistant-ip>:8100/mcp` with the header `Authorization: Bearer <mcp_auth_token>`.
+4. Click **Open Web UI** (or **Grocy MCP** in the sidebar) for connection status, copy-ready client setup, per-tool on/off switches, library counts and an Attention list (expired/due stock, below-minimum products, overdue chores, tasks and batteries).
 
 Full setup, including Claude Desktop, Claude custom connectors (via Cloudflared) and Home Assistant Assist, is in [`grocy_mcp_app/DOCS.md`](grocy_mcp_app/DOCS.md).
 

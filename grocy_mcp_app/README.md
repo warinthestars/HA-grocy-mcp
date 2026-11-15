@@ -7,6 +7,7 @@ batteries and equipment.
 
 - Works with Grocy running as another app on the same Home Assistant, or anywhere on your network
 - Streamable HTTP endpoint on port 8100 (`/mcp`) with bearer-token protection
+- Web UI in the Home Assistant sidebar: connection status, copy-ready client setup, per-tool on/off switches, library counts, and a list of expired, due and below-minimum stock and overdue chores, tasks and batteries
 - amd64 and aarch64
 
 Open the **Documentation** tab for step-by-step setup, including connecting

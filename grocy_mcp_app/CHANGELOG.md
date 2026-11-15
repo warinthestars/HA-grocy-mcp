@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-14
+
+### Added
+
+- **Web UI** (Home Assistant **Open Web UI** and a **Grocy MCP** sidebar panel through ingress), ported from the Mealie MCP app so both servers share the same structure (`grocy_mcp.mcp.web_ui`, registered by `http_transport.run_http`):
+  - **Overview**: Grocy connection, version, API key user and enabled Grocy features; server version, uptime and auth status; warnings for a missing bearer token, an unreachable Grocy, or enabled tools whose Grocy feature is off
+  - **Connect**: copy-ready Claude Code, Claude Desktop (`mcp-remote`) and custom connector setup
+  - **Tools**: turn tools or whole groups on/off (saved in `/data/ui_settings.json`, so it survives restarts and updates); groups for Grocy features that are off are marked and can be turned off in one click
+  - **Library**: record counts for products, locations, product groups, quantity units, barcodes, shopping lists and items, recipes, meal plan entries, chores, open tasks, batteries and equipment
+  - **Attention**: expired, past best-before and due-soon stock, products below minimum stock, and overdue chores, tasks and batteries
+- The UI only answers the Home Assistant Supervisor (ingress) inside the app, or loopback elsewhere (`MCP_UI_ALLOW_REMOTE=1` to widen, `MCP_UI_ENABLED=0` to turn it off). The MCP endpoint keeps its bearer-token check
+
 ## [0.3.0] - 2026-11-14
 
 ### Added
@@ -96,4 +108,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration from CLI args, environment variables, or TOML file
 - stdio and streamable-http MCP transports
 
+[0.4.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.4.0
 [0.3.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.3.0
