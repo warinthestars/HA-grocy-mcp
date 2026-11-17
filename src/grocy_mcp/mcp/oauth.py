@@ -56,10 +56,11 @@ from mcp.server.auth.provider import (
     RefreshToken,
     construct_redirect_uri,
 )
-from mcp.server.auth.routes import cors_middleware
+from mcp.server.auth.handlers.metadata import MetadataHandler
+from mcp.server.auth.routes import build_metadata, cors_middleware
 from mcp.server.auth.settings import ClientRegistrationOptions, RevocationOptions
 from mcp.shared.auth import InvalidRedirectUriError, OAuthClientInformationFull, OAuthToken
-from pydantic import AnyUrl
+from pydantic import AnyHttpUrl, AnyUrl
 from starlette.datastructures import FormData
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
@@ -496,7 +497,39 @@ class GrocyOAuthProvider(OAuthProvider):
                 )
             routes.append(route)
         routes.append(Route(CONSENT_PATH, endpoint=self.consent, methods=["GET", "POST"]))
+        routes.extend(self._path_discovery_routes(mcp_path))
         return routes
+
+    def _path_discovery_routes(self, mcp_path: str | None) -> list[Route]:
+        """Authorization server metadata at the MCP endpoint's path.
+
+        Some clients (Gemini custom connectors) ignore `authorization_servers`
+        in the protected resource metadata and treat the endpoint URL
+        (https://host/mcp) as the issuer, so they only try
+        /.well-known/oauth-authorization-server/mcp and
+        /mcp/.well-known/oauth-authorization-server. Serve the same metadata
+        there, with `issuer` set to the URL they derived (RFC 8414 3.3 requires
+        the issuer to match). The endpoints stay at the root.
+        """
+        path = "/" + (mcp_path or "/mcp").strip("/")
+        if path == "/":
+            return []
+        metadata = build_metadata(
+            self.base_url,
+            self.service_documentation_url,
+            self.client_registration_options or ClientRegistrationOptions(),
+            self.revocation_options or RevocationOptions(),
+        )
+        # AnyHttpUrl (the model field type): AnyUrl works but makes pydantic warn.
+        metadata.issuer = AnyHttpUrl(self.cfg["public_url"] + path)
+        handler = cors_middleware(MetadataHandler(metadata).handle, ["GET", "OPTIONS"])
+        return [
+            Route(p, endpoint=handler, methods=["GET", "OPTIONS"])
+            for p in (
+                f"/.well-known/oauth-authorization-server{path}",
+                f"{path}/.well-known/oauth-authorization-server",
+            )
+        ]
 
 
 # ----------------------------------------------------------------- pages

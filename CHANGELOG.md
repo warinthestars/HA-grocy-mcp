@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-17
+
+### Fixed
+
+- Gemini custom connectors couldn't find the OAuth sign-in endpoints: Gemini ignores `authorization_servers` in the protected-resource metadata, treats the endpoint URL (`https://host/mcp`) as the issuer, and only looks for `/.well-known/oauth-authorization-server/mcp` and `/mcp/.well-known/oauth-authorization-server`. The sign-in metadata is now served there too, with `issuer` set to the endpoint URL (RFC 8414 §3.3) and the endpoints still at the root (ported from the Mealie MCP app)
+- With OAuth off, discovery probes under the endpoint path (`/mcp/.well-known/...`) got `401` from the bearer check, which can make clients assume OAuth; every `/.well-known/` path now passes through to a `404`
+
 ## [0.5.1] - 2026-11-17
 
 ### Fixed
@@ -126,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration from CLI args, environment variables, or TOML file
 - stdio and streamable-http MCP transports
 
+[0.5.2]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.2
 [0.5.1]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.1
 [0.5.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.0
 [0.4.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.4.0

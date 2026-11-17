@@ -1,5 +1,5 @@
 name: Grocy MCP Server
-version: "0.5.1"
+version: "0.5.2"
 slug: grocy_mcp
 description: Model Context Protocol server exposing your Grocy stock, shopping lists, recipes, chores and tasks to AI assistants.
 url: https://github.com/warinthestars/HA-grocy-mcp

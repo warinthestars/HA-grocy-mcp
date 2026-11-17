@@ -70,6 +70,23 @@ async def test_well_known_bypasses_auth(mcp):
     assert resp.status_code != 401
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/.well-known/oauth-protected-resource/mcp",
+        "/.well-known/oauth-authorization-server/mcp",
+        "/mcp/.well-known/oauth-authorization-server",
+        "/mcp/.well-known/openid-configuration",
+    ],
+)
+async def test_discovery_paths_never_401(mcp, path):
+    """With OAuth off, discovery probes must 404, not 401 (a 401 makes clients assume OAuth)."""
+    transport = httpx.ASGITransport(app=build_http_app(mcp, token="s3cret"))
+    async with httpx.AsyncClient(transport=transport, base_url="http://h") as client:
+        resp = await client.get(path)
+    assert resp.status_code != 401, path
+
+
 async def test_custom_path(mcp):
     resp = await _post(build_http_app(mcp, path="/grocy"), path="/grocy")
     assert resp.status_code == 200

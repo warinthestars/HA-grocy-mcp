@@ -315,7 +315,7 @@ dialog shows the changelog. Check the **Log** tab after updating.
 | Log: `OAuth is enabled but not configured` | Set `public_url` (and `oauth_password` or `mcp_auth_token`), save, restart. See 5.5. |
 | Log: `WARNING: public_url should not include the endpoint path` | `public_url` ends in `/mcp`. The app corrects it, but set it to the bare address (e.g. `https://grocy-mcp.example.com`) to silence the warning. |
 | OAuth connector: "Redirect URI ... is not allowed" | The fixed client's callback isn't in `oauth_redirect_uris`, or isn't `https`. Add it, or clear the option to allow any `https` callback. |
-| Gemini can't connect: log shows `/.well-known/oauth-authorization-server/mcp` or `/mcp/.well-known/...` returning 404 | `public_url` included `/mcp` in releases before 0.5.1. Update the app, or remove `/mcp` from `public_url`. |
+| Gemini can't connect: log shows `/.well-known/oauth-authorization-server/mcp` or `/mcp/.well-known/...` returning 404 | Update the app: 0.5.1 fixed `public_url` values ending in `/mcp`, and 0.5.2 serves the sign-in metadata at the paths Gemini looks for. |
 | Gemini fails at `/authorize` (log shows `GET /authorize ... 400`, often a `code_challenge` error) | The server requires PKCE (S256), which the MCP SDK makes mandatory. The client has to send a `code_challenge`. |
 | Claude custom connector: "couldn't connect" / asks to sign in | The URL must be public HTTPS (5.2), Authentication must be *No sign in*, and the header must be set. A LAN URL can't work. |
 | Claude Desktop shows no grocy tools (5.1) | Node.js must be installed; fully quit and reopen Claude Desktop; check `%APPDATA%\Claude\logs\mcp-server-grocy.log` (Windows) or `~/Library/Logs/Claude/mcp-server-grocy.log` (macOS). |

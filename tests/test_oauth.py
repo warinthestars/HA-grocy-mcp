@@ -247,6 +247,19 @@ def test_public_url_with_mcp_path_still_discoverable(env, monkeypatch):
         assert c.get("/.well-known/oauth-protected-resource/mcp/mcp").status_code == 404
 
 
+def test_metadata_at_endpoint_path_for_gemini(client):
+    for path in (
+        "/.well-known/oauth-authorization-server/mcp",
+        "/mcp/.well-known/oauth-authorization-server",
+    ):
+        r = client.get(path)
+        assert r.status_code == 200, path
+        md = r.json()
+        assert md["issuer"] == BASE + "/mcp"
+        assert md["authorization_endpoint"] == BASE + "/authorize"
+        assert md["token_endpoint"] == BASE + "/token"
+
+
 # --------------------------------------------------------------------------
 # Grocy-specific: the real server wired through http_transport.run_http()
 
@@ -313,3 +326,32 @@ def test_run_http_corrects_public_url_with_endpoint_path(env, monkeypatch, tmp_p
 def test_run_http_no_warning_for_bare_public_url(env, monkeypatch, tmp_path, capsys):
     with _run_http(monkeypatch, tmp_path):
         assert "public_url should not include" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("public_url", [BASE, BASE + "/mcp"])
+def test_run_http_serves_path_discovery_for_gemini(env, monkeypatch, tmp_path, public_url):
+    """Gemini's discovery order, through the real app (stateless HTTP, web UI, bearer)."""
+    monkeypatch.setenv("MCP_PUBLIC_URL", public_url)
+    with _run_http(monkeypatch, tmp_path) as c:
+        prm = c.get("/.well-known/oauth-protected-resource/mcp").json()
+        assert prm["resource"] == BASE + "/mcp"
+        for path in (
+            "/.well-known/oauth-authorization-server/mcp",
+            "/mcp/.well-known/oauth-authorization-server",
+        ):
+            md = c.get(path).json()
+            assert md["issuer"] == BASE + "/mcp", path
+            assert md["authorization_endpoint"] == BASE + "/authorize"
+            assert md["registration_endpoint"] == BASE + "/register"
+            pre = c.options(
+                path,
+                headers={
+                    "origin": "https://gemini.google.com",
+                    "access-control-request-method": "GET",
+                },
+            )
+            assert pre.status_code in (200, 204), path
+        # The root document keeps the bare issuer; the MCP endpoint is still protected.
+        assert c.get("/.well-known/oauth-authorization-server").json()["issuer"].rstrip("/") == BASE
+        assert c.post("/mcp", json=INIT, headers=ACCEPT).status_code == 401
+        assert _mcp(c, "static") == 200

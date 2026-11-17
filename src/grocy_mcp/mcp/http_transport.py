@@ -45,7 +45,9 @@ class BearerAuthMiddleware:
         path = scope.get("path", "")
         if (
             scope["type"] != "http"
-            or path.startswith("/.well-known/")
+            # Any discovery path, including the endpoint-relative form Gemini
+            # probes (/mcp/.well-known/oauth-authorization-server).
+            or "/.well-known/" in path
             or path == "/"
             or path.startswith("/ui/")
         ):
