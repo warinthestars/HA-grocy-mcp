@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-17
+
+### Fixed
+
+- OAuth sign-in failed (Gemini couldn't find the sign-in endpoints) when `public_url` included the `/mcp` endpoint path: the server advertised `/mcp/mcp` and expected every OAuth endpoint under `/mcp`. The path is now removed automatically, with a warning in the log (ported from the Mealie MCP app)
+
 ## [0.5.0] - 2026-11-17
 
 ### Added
@@ -122,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration from CLI args, environment variables, or TOML file
 - stdio and streamable-http MCP transports
 
+[0.5.1]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.1
 [0.5.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.0
 [0.4.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.4.0
 [0.3.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.3.0

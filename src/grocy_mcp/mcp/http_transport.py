@@ -123,6 +123,12 @@ def run_http(
                     flush=True,
                 )
             else:
+                if cfg.get("public_url_corrected"):
+                    print(
+                        "WARNING: public_url should not include the endpoint path; "
+                        f"using {cfg['public_url']}",
+                        flush=True,
+                    )
                 mcp.auth = GrocyOAuthProvider(cfg)
                 oauth_on = True
     except Exception as e:

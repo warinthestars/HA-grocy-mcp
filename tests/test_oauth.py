@@ -229,6 +229,24 @@ def test_settings_disabled_by_default(monkeypatch):
     assert oauth_settings()["enabled"] is False
 
 
+@pytest.mark.parametrize("value", [BASE, BASE + "/", BASE + "/mcp", BASE + "/mcp/"])
+def test_public_url_strips_endpoint_path(monkeypatch, value):
+    monkeypatch.setenv("MCP_PUBLIC_URL", value)
+    assert oauth_settings()["public_url"] == BASE
+    assert oauth_settings()["public_url_corrected"] is value.rstrip("/").endswith("/mcp")
+
+
+def test_public_url_with_mcp_path_still_discoverable(env, monkeypatch):
+    monkeypatch.setenv("MCP_PUBLIC_URL", BASE + "/mcp")
+    with _client() as c:
+        prm = c.get("/.well-known/oauth-protected-resource/mcp").json()
+        assert prm["resource"] == BASE + "/mcp"
+        assert prm["authorization_servers"] in ([BASE + "/"], [BASE])
+        assert c.get("/.well-known/oauth-authorization-server").status_code == 200
+        # Gemini's failing probes from the bug report must not be needed any more.
+        assert c.get("/.well-known/oauth-protected-resource/mcp/mcp").status_code == 404
+
+
 # --------------------------------------------------------------------------
 # Grocy-specific: the real server wired through http_transport.run_http()
 
@@ -276,3 +294,22 @@ def test_settings_accepts_ha_bool_strings(monkeypatch):
     for value, expected in (("True", True), ("False", False), ("true", True), ("", False)):
         monkeypatch.setenv("MCP_OAUTH_ENABLED", value)
         assert oauth_settings()["enabled"] is expected
+
+
+def test_run_http_corrects_public_url_with_endpoint_path(env, monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("MCP_PUBLIC_URL", BASE + "/mcp/")
+    with _run_http(monkeypatch, tmp_path) as c:
+        out = capsys.readouterr().out
+        assert f"WARNING: public_url should not include the endpoint path; using {BASE}" in out
+        md = c.get("/.well-known/oauth-authorization-server").json()
+        assert md["issuer"].rstrip("/") == BASE
+        assert md["authorization_endpoint"] == f"{BASE}/authorize"
+        assert md["token_endpoint"] == f"{BASE}/token"
+        prm = c.get("/.well-known/oauth-protected-resource/mcp").json()
+        assert prm["resource"] == BASE + "/mcp"
+        assert _mcp(c, "static") == 200
+
+
+def test_run_http_no_warning_for_bare_public_url(env, monkeypatch, tmp_path, capsys):
+    with _run_http(monkeypatch, tmp_path):
+        assert "public_url should not include" not in capsys.readouterr().out
