@@ -1,4 +1,4 @@
-"""Long-running streamable HTTP transport with optional bearer-token auth.
+"""Long-running streamable HTTP transport with optional bearer-token or OAuth auth.
 
 Used by the Home Assistant app (``grocy_mcp_app/run.py``). Kept separate from
 ``server.main`` so the fork stays easy to sync with upstream.
@@ -11,6 +11,9 @@ Environment variables:
                     ``Authorization: Bearer <token>``.
     MCP_LOG_LEVEL   Uvicorn log level (default: info)
     MCP_UI_ENABLED  Set to 0 to turn the web UI off (see web_ui.py)
+    MCP_OAUTH_*     FORK: optional OAuth sign-in (see oauth.py). When enabled,
+                    FastMCP's auth handles the endpoint and still accepts
+                    MCP_AUTH_TOKEN as a bearer token.
 """
 
 from __future__ import annotations
@@ -103,10 +106,34 @@ def run_http(
     except Exception as e:  # the MCP endpoint must still start if the UI fails
         print(f"Web UI not available: {e}", flush=True)
 
-    app = build_http_app(mcp, path=path, token=token)
+    # FORK: OAuth sign-in (oauth.py). FastMCP's auth then guards the endpoint,
+    # so the plain bearer middleware isn't used.
+    oauth_on = False
+    try:
+        from grocy_mcp.mcp.oauth import GrocyOAuthProvider, config_problems, oauth_settings
+
+        cfg = oauth_settings()
+        if cfg["enabled"]:
+            problems = config_problems(cfg)
+            if problems:
+                print(
+                    "ERROR: OAuth is enabled but not configured: "
+                    + " ".join(problems)
+                    + " Continuing without OAuth.",
+                    flush=True,
+                )
+            else:
+                mcp.auth = GrocyOAuthProvider(cfg)
+                oauth_on = True
+    except Exception as e:
+        print(f"ERROR: OAuth not available: {e}. Continuing without OAuth.", flush=True)
+
+    app = build_http_app(mcp, path=path, token="" if oauth_on else token)
+
+    modes = [m for m, on in (("bearer token", token), ("OAuth", oauth_on)) if on]
     print(
         f"Grocy MCP server listening on http://{host}:{port}{path} "
-        f"(auth: {'bearer token' if token else 'NONE'})",
+        f"(auth: {' + '.join(modes) or 'NONE'})",
         flush=True,
     )
     uvicorn.run(app, host=host, port=port, log_level=log_level)

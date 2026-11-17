@@ -1,5 +1,5 @@
 name: Grocy MCP Server
-version: "0.4.0"
+version: "0.5.0"
 slug: grocy_mcp
 description: Model Context Protocol server exposing your Grocy stock, shopping lists, recipes, chores and tasks to AI assistants.
 url: https://github.com/warinthestars/HA-grocy-mcp
@@ -24,9 +24,16 @@ options:
   grocy_url: "http://a0d7b954-grocy:80"
   grocy_api_key: ""
   mcp_auth_token: ""
+  oauth_enabled: false
   log_level: info
 schema:
   grocy_url: url
   grocy_api_key: password
   mcp_auth_token: password?
+  oauth_enabled: bool
+  public_url: url?
+  oauth_client_id: str?
+  oauth_client_secret: password?
+  oauth_password: password?
+  oauth_redirect_uris: str?
   log_level: list(debug|info|warning|error)

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
+### Added
+
+- **OAuth sign-in** for Claude, ChatGPT and Gemini web connectors (`grocy_mcp.mcp.oauth`, ported from the Mealie MCP app): with `oauth_enabled` and `public_url` set, the app serves OAuth discovery, `/authorize`, `/token`, `/register` (dynamic client registration) and `/revoke` through FastMCP's `OAuthProvider`. Connections are approved on a **Connect to Grocy MCP** page with `oauth_password` (defaults to `mcp_auth_token`); 5 wrong passwords per IP block for 10 minutes
+- Optional fixed client (`oauth_client_id` / `oauth_client_secret`, callback allowlist `oauth_redirect_uris`) for Gemini, accepting HTTP Basic or form credentials
+- Access tokens last 1 hour, refresh tokens 90 days and rotate on use; clients and token hashes persist in `/data/oauth_state.json` so restarts don't disconnect anyone
+- `mcp_auth_token` keeps working as a bearer token alongside OAuth. A misconfigured OAuth setup logs an error and falls back to bearer-only
+- The web UI's Overview shows when OAuth is on
+
+### Changed
+
+- Requires `fastmcp>=4.1` (was `>=3.2.0`)
+
 ## [0.4.0] - 2026-11-14
 
 ### Added
@@ -106,5 +120,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration from CLI args, environment variables, or TOML file
 - stdio and streamable-http MCP transports
 
+[0.5.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.0
 [0.4.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.4.0
 [0.3.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.3.0

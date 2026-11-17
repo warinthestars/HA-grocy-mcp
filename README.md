@@ -23,6 +23,8 @@ Run the MCP server as a Home Assistant app next to the Grocy app:
 3. Start it and point MCP clients at `http://<home-assistant-ip>:8100/mcp` with the header `Authorization: Bearer <mcp_auth_token>`.
 4. Click **Open Web UI** (or **Grocy MCP** in the sidebar) for connection status, copy-ready client setup, per-tool on/off switches, library counts and an Attention list (expired/due stock, below-minimum products, overdue chores, tasks and batteries).
 
+Claude, ChatGPT and Gemini web connectors can sign in with OAuth instead of a bearer header (`oauth_enabled` + `public_url`).
+
 Full setup, including Claude Desktop, Claude custom connectors (via Cloudflared) and Home Assistant Assist, is in [`grocy_mcp_app/DOCS.md`](grocy_mcp_app/DOCS.md).
 
 Releases: add entries under `## [Unreleased]` in `CHANGELOG.md`, run `python scripts/release.py bump patch|minor|major`, merge, then push the `vX.Y.Z` tag. The **Home Assistant App** workflow builds `ghcr.io/warinthestars/grocy-mcp-addon:<version>` (amd64 + aarch64), which is what Home Assistant installs.

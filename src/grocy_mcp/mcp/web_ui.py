@@ -133,6 +133,10 @@ def _category(name: str) -> tuple[str, str | None]:
     return "Other", None
 
 
+def _oauth_on() -> bool:
+    return os.getenv("MCP_OAUTH_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def _allowed(request: Request) -> bool:
     if os.getenv("MCP_UI_ENABLED", "1") == "0":
         return False
@@ -363,7 +367,8 @@ def register_ui(mcp) -> None:
                     "uptime_seconds": int(time.time() - _STARTED),
                     "port": int(os.getenv("MCP_PORT", "8100")),
                     "path": os.getenv("MCP_PATH", "/mcp"),
-                    "auth_enabled": bool(os.getenv("MCP_AUTH_TOKEN", "").strip()),
+                    "auth_enabled": bool(os.getenv("MCP_AUTH_TOKEN", "").strip()) or _oauth_on(),
+                    "oauth_enabled": _oauth_on(),
                     "in_home_assistant": in_addon(),
                     "hostname": os.getenv("HOSTNAME", ""),
                 },
@@ -557,7 +562,7 @@ async function loadStatus(){
    ${g.user?`<dt>Key user</dt><dd>${esc(g.user)}</dd>`:''}
    ${g.error?`<dt>Error</dt><dd>${esc(g.error)}</dd>`:''}`;
   $('#server-kv').innerHTML=`<dt>Version</dt><dd>${esc(s.version)}</dd><dt>Uptime</dt><dd>${fmtUp(s.uptime_seconds)}</dd>
-   <dt>Endpoint</dt><dd>:${s.port}${esc(s.path)}</dd><dt>Auth</dt><dd>${s.auth_enabled?'<span class="pill ok">Bearer token</span>':'<span class="pill bad">None</span>'}</dd>`;
+   <dt>Endpoint</dt><dd>:${s.port}${esc(s.path)}</dd><dt>Auth</dt><dd>${s.auth_enabled?'<span class="pill ok">'+(s.oauth_enabled?'Bearer token / OAuth':'Bearer token')+'</span>':'<span class="pill bad">None</span>'}</dd>`;
   $('#tool-stat').innerHTML=`${STATUS.tools.total-STATUS.tools.disabled}<small>of ${STATUS.tools.total} tools enabled</small>`;
   const f=g.features;$('#features').innerHTML=f?Object.entries(FEAT).map(([k,l])=>`<span class="pill ${f[k]===false?'off':'ok'}">${esc(l)}${f[k]===false?' · off':''}</span>`).join(''):'<span class="muted">Unknown until Grocy is reachable.</span>';
   const w=[];if(!s.auth_enabled)w.push('No MCP bearer token is set, so anyone who can reach port '+s.port+' can use this server. Set one on the app\'s Configuration tab.');

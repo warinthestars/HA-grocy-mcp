@@ -48,6 +48,11 @@ Open the app's **Configuration** tab.
 | `grocy_url` | yes | Where **this app** can reach Grocy. See [Choosing the Grocy URL](#choosing-the-grocy-url). No trailing slash. |
 | `grocy_api_key` | yes | The key from step 2. |
 | `mcp_auth_token` | strongly recommended | A password that AI clients must send as `Authorization: Bearer <token>`. See [Choosing an MCP token](#choosing-an-mcp-token). |
+| `oauth_enabled` | no | Turns on OAuth sign-in. See [5.5](#55-oauth-sign-in-claude-chatgpt-gemini). |
+| `public_url` | with OAuth | Public HTTPS address of this app, without `/mcp`. |
+| `oauth_password` | no | Typed on the sign-in page when a client connects. Defaults to `mcp_auth_token`. |
+| `oauth_client_id` / `oauth_client_secret` | no | A fixed client for apps that require one (e.g. Gemini). |
+| `oauth_redirect_uris` | no | Comma-separated callback allowlist for that fixed client. Empty allows any `https` callback. |
 | `log_level` | no | `info` by default; `debug` for troubleshooting. |
 
 The MCP server listens on container port 8100. To use a different host port,
@@ -162,6 +167,7 @@ Pick the option that matches where the client runs:
 | Claude custom connector, web/desktop/mobile (5.2) | Anthropic's cloud | **yes** |
 | Claude Code (5.3) | your computer | no (LAN) |
 | Home Assistant Assist (5.4) | Home Assistant itself | no |
+| Claude / ChatGPT / Gemini with OAuth sign-in (5.5) | their cloud | **yes** |
 
 ### 5.1 Claude Desktop, local configuration (LAN only, nothing exposed)
 
@@ -250,6 +256,44 @@ If the integration can't authenticate with a static bearer token, it gets 401
 errors. In that case you'd have to leave `mcp_auth_token` empty, which is only
 safe if port 8100 isn't reachable from outside your network.
 
+### 5.5 OAuth sign-in (Claude, ChatGPT, Gemini)
+
+Hosted connectors usually sign in with OAuth instead of sending a bearer
+header. With `oauth_enabled` on, the app runs its own OAuth server (built on
+FastMCP). `mcp_auth_token` keeps working as a bearer token, so local clients
+don't change.
+
+1. Publish the app on a public HTTPS URL (see 5.2).
+2. On the **Configuration** tab:
+   - `oauth_enabled`: on
+   - `public_url`: `https://grocy-mcp.example.com`
+   - `oauth_password` (optional): what you'll type to approve a connection.
+     Defaults to `mcp_auth_token`.
+   - Only for Gemini or other clients that insist on a fixed client ID and
+     secret: `oauth_client_id` (any name, e.g. `grocy-mcp`) and
+     `oauth_client_secret` (e.g. from
+     `python -c "import secrets; print(secrets.token_hex(32))"`).
+
+   Save and restart. The log shows `auth: bearer token + OAuth`.
+3. Add the connector with URL `https://grocy-mcp.example.com/mcp`:
+   - **Claude / ChatGPT:** leave the OAuth client ID and secret fields empty.
+     They register themselves.
+   - **Gemini:** enter `oauth_client_id` and `oauth_client_secret`. If it asks
+     for endpoints: authorization URL `https://grocy-mcp.example.com/authorize`,
+     token URL `https://grocy-mcp.example.com/token`.
+4. A **Connect to Grocy MCP** page opens. Enter the approval password and
+   click **Allow**.
+
+Anyone can register a client, but nobody gets in without the approval
+password, and repeated wrong passwords are blocked for 10 minutes. Access
+tokens last an hour and refresh automatically for 90 days. Clients and token
+hashes are stored in `/data/oauth_state.json`; delete it and restart to
+disconnect every OAuth client.
+
+If `oauth_enabled` is on but `public_url` or a password is missing, the log
+shows `ERROR: OAuth is enabled but not configured: ...` and the app keeps
+running with the bearer token only.
+
 ## 6. Updating
 
 Home Assistant offers updates when a new version is released. The update
@@ -265,7 +309,10 @@ dialog shows the changelog. Check the **Log** tab after updating.
 | Recipe, meal plan, battery or other tools return errors | That feature may be turned off in Grocy (for the Community app: Grocy app **Configuration → features**). The web UI's **Tools** tab marks those groups and can turn their tools off. |
 | **Open Web UI** shows a 403 error | The UI only answers requests that come through Home Assistant. Open it from the app page or sidebar, not from `http://<ip>:8100/`. |
 | Client gets **401 Unauthorized** from this app | The client isn't sending `Authorization: Bearer <mcp_auth_token>`, or the token was mangled. Use letters/digits only; on Windows use the `env` form in 5.1. |
-| Log shows `GET /.well-known/oauth-protected-resource ... 404` | Normal. Clients check for OAuth first, then use the bearer header. |
+| Log shows `GET /.well-known/oauth-protected-resource ... 404` | Normal when OAuth is off. Clients check for OAuth first, then use the bearer header. |
+| Log: `OAuth is enabled but not configured` | Set `public_url` (and `oauth_password` or `mcp_auth_token`), save, restart. See 5.5. |
+| OAuth connector: "Redirect URI ... is not allowed" | The fixed client's callback isn't in `oauth_redirect_uris`, or isn't `https`. Add it, or clear the option to allow any `https` callback. |
+| Gemini fails at `/authorize` with a `code_challenge` error | The server requires PKCE (S256), which the MCP SDK makes mandatory. |
 | Claude custom connector: "couldn't connect" / asks to sign in | The URL must be public HTTPS (5.2), Authentication must be *No sign in*, and the header must be set. A LAN URL can't work. |
 | Claude Desktop shows no grocy tools (5.1) | Node.js must be installed; fully quit and reopen Claude Desktop; check `%APPDATA%\Claude\logs\mcp-server-grocy.log` (Windows) or `~/Library/Logs/Claude/mcp-server-grocy.log` (macOS). |
 | Port 8100 already in use | Change the host port under **Configuration → Network**, and update client URLs. |
