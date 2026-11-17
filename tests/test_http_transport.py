@@ -90,3 +90,12 @@ async def test_discovery_paths_never_401(mcp, path):
 async def test_custom_path(mcp):
     resp = await _post(build_http_app(mcp, path="/grocy"), path="/grocy")
     assert resp.status_code == 200
+
+
+async def test_head_and_get_reach_auth_check(mcp):
+    """HEAD/GET /mcp must be answered by the auth check (401), not refused with 405."""
+    transport = httpx.ASGITransport(app=build_http_app(mcp, token="s3cret"))
+    async with httpx.AsyncClient(transport=transport, base_url="http://h") as client:
+        for method in ("HEAD", "GET"):
+            resp = await client.request(method, "/mcp")
+            assert resp.status_code == 401, method

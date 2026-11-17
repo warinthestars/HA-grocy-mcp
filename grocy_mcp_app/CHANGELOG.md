@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-11-17
+
+### Fixed
+
+- Gemini custom connectors failed with "Account linking is required" after the sign-in page: the app served MCP in stateless HTTP mode, which only routes `POST`, so Gemini's first probes (`HEAD`/`GET /mcp`) got `405 Method Not Allowed` instead of the `401` OAuth challenge, and the event stream Gemini opens after signing in (`GET /mcp`) wasn't available. The app now uses FastMCP's default (stateful) streamable HTTP, like the Mealie MCP app. The upstream `grocy-mcp --transport streamable-http` command is unchanged
+
 ## [0.5.2] - 2026-11-17
 
 ### Fixed
@@ -135,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration from CLI args, environment variables, or TOML file
 - stdio and streamable-http MCP transports
 
+[0.5.3]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.3
 [0.5.2]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.2
 [0.5.1]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.1
 [0.5.0]: https://github.com/warinthestars/HA-grocy-mcp/releases/tag/v0.5.0

@@ -76,7 +76,11 @@ class BearerAuthMiddleware:
 def build_http_app(mcp: Any, path: str = "/mcp", token: str = "") -> Any:
     """Build the Starlette app for ``mcp``, guarded by a bearer token when given."""
     middleware = [Middleware(BearerAuthMiddleware, token=token)] if token else []
-    kwargs: dict[str, Any] = {"path": path, "middleware": middleware, "stateless_http": True}
+    # FORK: FastMCP's default (stateful) streamable HTTP, as in the Mealie MCP app.
+    # Stateless mode only routes POST, so HEAD/GET /mcp got 405 before the auth
+    # check ran. Gemini probes HEAD /mcp first and needs the 401 + OAuth
+    # challenge there, and opens the GET event stream after signing in.
+    kwargs: dict[str, Any] = {"path": path, "middleware": middleware}
     # The server is reached through Home Assistant hostnames, LAN IPs and tunnels,
     # so Host/Origin pinning would reject legitimate clients; the bearer token is
     # the access control. Older FastMCP releases don't have this option.

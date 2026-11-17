@@ -330,7 +330,7 @@ def test_run_http_no_warning_for_bare_public_url(env, monkeypatch, tmp_path, cap
 
 @pytest.mark.parametrize("public_url", [BASE, BASE + "/mcp"])
 def test_run_http_serves_path_discovery_for_gemini(env, monkeypatch, tmp_path, public_url):
-    """Gemini's discovery order, through the real app (stateless HTTP, web UI, bearer)."""
+    """Gemini's discovery order, through the real app (web UI, bearer)."""
     monkeypatch.setenv("MCP_PUBLIC_URL", public_url)
     with _run_http(monkeypatch, tmp_path) as c:
         prm = c.get("/.well-known/oauth-protected-resource/mcp").json()
@@ -355,3 +355,43 @@ def test_run_http_serves_path_discovery_for_gemini(env, monkeypatch, tmp_path, p
         assert c.get("/.well-known/oauth-authorization-server").json()["issuer"].rstrip("/") == BASE
         assert c.post("/mcp", json=INIT, headers=ACCEPT).status_code == 401
         assert _mcp(c, "static") == 200
+
+
+def _mcp_post(c, body, token="static", session=None):
+    h = {**ACCEPT, "authorization": f"Bearer {token}"}
+    if session:
+        h["mcp-session-id"] = session
+    return c.post("/mcp", json=body, headers=h)
+
+
+def test_run_http_head_and_get_get_oauth_challenge(env, monkeypatch, tmp_path):
+    """Gemini probes HEAD /mcp first; it must get 401 + the OAuth challenge, not 405."""
+    with _run_http(monkeypatch, tmp_path) as c:
+        for method in ("HEAD", "GET", "POST"):
+            r = c.request(method, "/mcp")
+            assert r.status_code == 401, method
+            assert "resource_metadata" in r.headers["www-authenticate"], method
+
+
+def test_run_http_session_flow_after_sign_in(env, monkeypatch, tmp_path):
+    """The sequence Gemini runs after /token (as seen in the Mealie app's log)."""
+    with _run_http(monkeypatch, tmp_path) as c:
+        v, ch = _pkce()
+        code = _code(_approve(c, "gem", "https://gemini.example/cb", ch))
+        tok = c.post(
+            "/token",
+            auth=("gem", "sec"),
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": "https://gemini.example/cb",
+                "code_verifier": v,
+            },
+        ).json()["access_token"]
+        init = _mcp_post(c, INIT, tok)
+        assert init.status_code == 200
+        session = init.headers["mcp-session-id"]
+        note = {"jsonrpc": "2.0", "method": "notifications/initialized"}
+        assert _mcp_post(c, note, tok, session).status_code == 202
+        listed = _mcp_post(c, {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, tok, session)
+        assert listed.status_code == 200 and "stock_overview_tool" in listed.text
